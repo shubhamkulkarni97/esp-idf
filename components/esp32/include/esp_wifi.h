@@ -88,6 +88,17 @@ extern "C" {
 #define ESP_ERR_WIFI_INIT_STATE  (ESP_ERR_WIFI_BASE + 19)  /*!< Invalod WiFi state when init/deinit is called */
 #define ESP_ERR_WIFI_STOP_STATE  (ESP_ERR_WIFI_BASE + 20)  /*!< Returned when WiFi is stopping */
 
+#define CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM 10
+#define CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM 32
+#define CONFIG_ESP32_WIFI_TX_BUFFER_TYPE 1
+#define CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER y
+#define CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM 32
+#define CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED y
+#define CONFIG_ESP32_WIFI_TX_BA_WIN 6
+#define CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED y
+#define CONFIG_ESP32_WIFI_RX_BA_WIN 6
+#define CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_0 y
+
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
  */

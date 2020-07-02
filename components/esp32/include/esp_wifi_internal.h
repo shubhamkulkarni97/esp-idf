@@ -41,6 +41,8 @@
 extern "C" {
 #endif
 
+typedef void * QueueHandle_t;
+
 typedef struct {
     QueueHandle_t handle; /**< FreeRTOS queue handler */
     void *storage;        /**< storage for FreeRTOS queue */
