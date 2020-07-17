@@ -33,7 +33,6 @@
 #include "sdkconfig.h"
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "phy.h"
 #include "phy_init_data.h"
 #include "esp_coexist_internal.h"

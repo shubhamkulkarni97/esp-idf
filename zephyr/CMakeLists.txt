@@ -9,10 +9,14 @@ if(CONFIG_SOC_ESP32)
   zephyr_include_directories(
     ../components/esp32/include
     ../components/soc/esp32/include
+    ../components/efuse/esp32/include
+    ../components/efuse/include
+    ../components/esp32
     )
 
   zephyr_link_libraries(
     hal
     -L${CMAKE_CURRENT_SOURCE_DIR}/../components/esp32
+    -L${CMAKE_CURRENT_SOURCE_DIR}/../components/efuse
     )
 endif()

@@ -14,6 +14,7 @@
 
 #ifndef PHY_INIT_DATA_H
 #define PHY_INIT_DATA_H /* don't use #pragma once here, we compile this file sometimes */
+#define CONFIG_ESP32_PHY_MAX_TX_POWER 20
 #include "esp_phy_init.h"
 #include "sdkconfig.h"
 

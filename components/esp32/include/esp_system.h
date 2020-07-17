@@ -32,6 +32,8 @@ typedef enum {
     ESP_MAC_ETH,
 } esp_mac_type_t;
 
+#define CONFIG_NUMBER_OF_UNIVERSAL_MAC_ADDRESS 4
+
 /** @cond */
 #define TWO_UNIVERSAL_MAC_ADDR 2
 #define FOUR_UNIVERSAL_MAC_ADDR 4
