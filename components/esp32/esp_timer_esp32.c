@@ -12,21 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "sys/param.h"
+#include <zephyr.h>
+#include "rom/ets_sys.h"
+// #include "sys/param.h"
 #include "esp_err.h"
 #include "esp_timer.h"
 #include "esp_system.h"
-#include "esp_task.h"
+// #include "esp_task.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
-#include "esp_log.h"
+// #include "esp_log.h"
 #include "esp_clk.h"
 #include "esp_timer_impl.h"
 #include "soc/frc_timer_reg.h"
 #include "soc/rtc.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+// #include "freertos/semphr.h"
 
 /**
  * @file esp_timer_esp32.c
@@ -138,7 +140,7 @@ static uint64_t s_rtc_time_diff = 0;
 
 // Spinlock used to protect access to static variables above and to the hardware
 // registers.
-portMUX_TYPE s_time_update_lock = portMUX_INITIALIZER_UNLOCKED;
+static unsigned int s_time_update_lock;
 
 //Use FRC_TIMER_LOAD_VALUE(1) instead of UINT32_MAX, convenience to change FRC TIMER for future
 #define TIMER_IS_AFTER_OVERFLOW(a) (ALARM_OVERFLOW_VAL < (a) && (a) <= FRC_TIMER_LOAD_VALUE(1))
@@ -154,7 +156,11 @@ static inline bool IRAM_ATTR timer_overflow_happened()
 static inline void IRAM_ATTR timer_count_reload(void)
 {
     //this function should be only called the real overflow happened. And the count cannot be very approach to 0xffffffff.
-    assert(TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))));
+    // __ASSERT_NO_MSG(TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))));
+    if (!(TIMER_IS_AFTER_OVERFLOW(REG_READ(FRC_TIMER_COUNT_REG(1))))) {
+        ets_printf("%s assert failed\n", __func__);
+        k_sleep(K_FOREVER);
+    }
 
     /* Restart the timer count by current time count minus ALARM_OVERFLOW_VAL(0xefffffff), it may cause error, if current tick is near boundary.
      * But even if the error happen 100% per overflow(the distance of each real overflow is about 50 second),
@@ -168,12 +174,14 @@ static inline void IRAM_ATTR timer_count_reload(void)
 
 void esp_timer_impl_lock()
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    // portENTER_CRITICAL(&s_time_update_lock);
+    s_time_update_lock = irq_lock();
 }
 
 void esp_timer_impl_unlock()
 {
-    portEXIT_CRITICAL(&s_time_update_lock);
+    // portEXIT_CRITICAL(&s_time_update_lock);
+    irq_unlock(s_time_update_lock);
 }
 
 uint64_t IRAM_ATTR esp_timer_impl_get_time()
@@ -211,7 +219,7 @@ uint64_t IRAM_ATTR esp_timer_impl_get_time()
 
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    s_time_update_lock = irq_lock();
     // Use calculated alarm value if it is less than ALARM_OVERFLOW_VAL.
     // Note that if by the time we update ALARM_REG, COUNT_REG value is higher,
     // interrupt will not happen for another ALARM_OVERFLOW_VAL timer ticks,
@@ -248,17 +256,17 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
                 (the alarm will be less than the counter) and it leads to the infinity loop.
                 To exclude this behavior to the offset was added the delta to have the opportunity to go through it.
             */
-            offset += abs((int)delta) + s_timer_ticks_per_us * 2;
+            // offset += abs((int)delta) + s_timer_ticks_per_us * 2;
         } else {
             break;
         }
     } while (1);
-    portEXIT_CRITICAL(&s_time_update_lock);
+    irq_unlock(s_time_update_lock);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)
 {
-    portENTER_CRITICAL_ISR(&s_time_update_lock);
+    s_time_update_lock = irq_lock();
     // Timekeeping: adjust s_time_base_us if counter has passed ALARM_OVERFLOW_VAL
     if (timer_overflow_happened()) {
         timer_count_reload();
@@ -281,17 +289,17 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
         timer_count_reload();
         s_time_base_us += s_timer_us_per_overflow;
     }
-    portEXIT_CRITICAL_ISR(&s_time_update_lock);
+    irq_unlock(s_time_update_lock);
     // Call the upper layer handler
     (*s_alarm_handler)(arg);
 }
 
 void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 {
-    portENTER_CRITICAL_ISR(&s_time_update_lock);
+    s_time_update_lock = irq_lock();
     /* Bail out if the timer is not initialized yet */
     if (s_timer_interrupt_handle == NULL) {
-        portEXIT_CRITICAL_ISR(&s_time_update_lock);
+        irq_unlock(s_time_update_lock);
         return;
     }
 
@@ -333,14 +341,18 @@ void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
     s_timer_ticks_per_us = new_ticks_per_us;
     s_timer_us_per_overflow = ALARM_OVERFLOW_VAL / new_ticks_per_us;
 
-    portEXIT_CRITICAL_ISR(&s_time_update_lock);
+    irq_unlock(s_time_update_lock);
 }
 
 void esp_timer_impl_advance(int64_t time_us)
 {
-    assert(time_us > 0 && "negative adjustments not supported yet");
+    // __ASSERT_NO_MSG(time_us > 0);
+    if (time_us <= 0) {
+        ets_printf("%s assert failed\n", __func__);
+        k_sleep(K_FOREVER);
+    }
 
-    portENTER_CRITICAL(&s_time_update_lock);
+    s_time_update_lock = irq_lock();
     uint64_t count = REG_READ(FRC_TIMER_COUNT_REG(1));
     /* Trigger an ISR to handle past alarms and set new one.
      * ISR handler will run once we exit the critical section.
@@ -348,27 +360,38 @@ void esp_timer_impl_advance(int64_t time_us)
     REG_WRITE(FRC_TIMER_ALARM_REG(1), 0);
     REG_WRITE(FRC_TIMER_LOAD_REG(1), 0);
     s_time_base_us += count / s_timer_ticks_per_us + time_us;
-    portEXIT_CRITICAL(&s_time_update_lock);
+    irq_unlock(s_time_update_lock);
 }
 
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
 
-    esp_err_t err = esp_intr_alloc(ETS_TIMER2_INTR_SOURCE,
+    esp_err_t err = ESP_OK;
+    /*esp_err_t err = esp_intr_alloc(ETS_TIMER2_INTR_SOURCE,
             ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM,
-            &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
+            &timer_alarm_isr, NULL, &s_timer_interrupt_handle);*/
+    
+    intr_matrix_set(0, ETS_TIMER2_INTR_SOURCE, ETS_TG0_T1_INUM);
+    irq_disable(ETS_TG0_T1_INUM);
+    irq_connect_dynamic(ETS_TG0_T1_INUM, ETS_TIMER2_INTR_SOURCE, &timer_alarm_isr, NULL, 0);
 
     if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (0x%0x)", err);
+        // ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (0x%0x)", err);
+        ets_printf("esp_intr_alloc failed (0x%0x)\n", err);
         return err;
     }
 
     uint32_t apb_freq = rtc_clk_apb_freq_get();
     s_timer_ticks_per_us = apb_freq / 1000000 / TIMER_DIV;
-    assert(s_timer_ticks_per_us > 0
-            && apb_freq % TIMER_DIV == 0
-            && "APB frequency does not result in a valid ticks_per_us value");
+    // __ASSERT_NO_MSG((s_timer_ticks_per_us > 0
+    //         && apb_freq % TIMER_DIV == 0));
+
+
+    if ((s_timer_ticks_per_us <= 0) && (apb_freq % TIMER_DIV != 0)){
+        ets_printf("%s assert failed\n", __func__);
+        k_sleep(K_FOREVER);
+    }
     s_timer_us_per_overflow = ALARM_OVERFLOW_VAL / s_timer_ticks_per_us;
     s_time_base_us = 0;
 
@@ -377,14 +400,16 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
     REG_WRITE(FRC_TIMER_CTRL_REG(1),
             TIMER_DIV_CFG | FRC_TIMER_ENABLE | FRC_TIMER_LEVEL_INT);
     REG_WRITE(FRC_TIMER_INT_REG(1), FRC_TIMER_INT_CLR);
-    ESP_ERROR_CHECK( esp_intr_enable(s_timer_interrupt_handle) );
+    // esp_intr_enable(s_timer_interrupt_handle);
+    irq_enable(ETS_TG0_T1_INUM);
 
     return ESP_OK;
 }
 
 void esp_timer_impl_deinit()
 {
-    esp_intr_disable(s_timer_interrupt_handle);
+    // esp_intr_disable(s_timer_interrupt_handle);
+    irq_disable(ETS_TG0_T1_INUM);
 
     REG_WRITE(FRC_TIMER_CTRL_REG(1), 0);
     REG_WRITE(FRC_TIMER_ALARM_REG(1), 0);

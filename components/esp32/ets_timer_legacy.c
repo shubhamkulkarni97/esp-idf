@@ -21,15 +21,15 @@
 
 #include <string.h>
 #include "esp_types.h"
-#include "esp_log.h"
+// #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "rom/ets_sys.h"
 #include "soc/frc_timer_reg.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+// #include "freertos/semphr.h"
+// #include "freertos/xtensa_api.h"
 #include "sdkconfig.h"
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
@@ -63,7 +63,7 @@ void ets_timer_setfn(ETSTimer *ptimer, ETSTimerFunc *pfunction, void *parg)
                 .dispatch_method = ESP_TIMER_TASK
         };
 
-        ESP_ERROR_CHECK( esp_timer_create(&create_args, (esp_timer_handle_t*)&(ptimer->timer_arg)) );
+        esp_timer_create(&create_args, (esp_timer_handle_t*)&(ptimer->timer_arg));
     }
 }
 
@@ -73,9 +73,9 @@ void IRAM_ATTR ets_timer_arm_us(ETSTimer *ptimer, uint32_t time_us, bool repeat_
     assert(timer_initialized(ptimer));
     esp_timer_stop(ESP_TIMER(ptimer));  // no error check
     if (!repeat_flag) {
-        ESP_ERROR_CHECK( esp_timer_start_once(ESP_TIMER(ptimer), time_us) );
+        esp_timer_start_once(ESP_TIMER(ptimer), time_us);
     } else {
-        ESP_ERROR_CHECK( esp_timer_start_periodic(ESP_TIMER(ptimer), time_us) );
+        esp_timer_start_periodic(ESP_TIMER(ptimer), time_us);
     }
 }
 
@@ -85,9 +85,9 @@ void IRAM_ATTR ets_timer_arm(ETSTimer *ptimer, uint32_t time_ms, bool repeat_fla
     assert(timer_initialized(ptimer));
     esp_timer_stop(ESP_TIMER(ptimer));  // no error check
     if (!repeat_flag) {
-        ESP_ERROR_CHECK( esp_timer_start_once(ESP_TIMER(ptimer), time_us) );
+        esp_timer_start_once(ESP_TIMER(ptimer), time_us);
     } else {
-        ESP_ERROR_CHECK( esp_timer_start_periodic(ESP_TIMER(ptimer), time_us) );
+        esp_timer_start_periodic(ESP_TIMER(ptimer), time_us);
     }
 }
 
