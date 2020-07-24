@@ -18,10 +18,10 @@
 #include "os.h"
 
 #if defined(__XTENSA__)
-#include <machine/endian.h>
-#define __BYTE_ORDER     BYTE_ORDER
-#define __LITTLE_ENDIAN  LITTLE_ENDIAN
-#define __BIG_ENDIAN     BIG_ENDIAN
+// #include <machine/endian.h>
+#define __BYTE_ORDER     1234
+#define __LITTLE_ENDIAN  1234
+#define __BIG_ENDIAN     4321
 #endif /*__XTENSA__*/
 
 #if defined(__linux__) || defined(__GLIBC__)
@@ -155,12 +155,12 @@ typedef TUint8 u8;
 #define WPA_TYPES_DEFINED
 #endif /* __SYMBIAN32__ */
 
-#ifndef WPA_TYPES_DEFINED
-#ifdef CONFIG_USE_INTTYPES_H
-#include <inttypes.h>
-#else
+// #ifndef WPA_TYPES_DEFINED
+// #ifdef CONFIG_USE_INTTYPES_H
+// #include <inttypes.h>
+// #else
 #include <stdint.h>
-#endif
+// #endif
 
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -171,7 +171,7 @@ typedef int32_t s32;
 typedef int16_t s16;
 typedef int8_t s8;
 #define WPA_TYPES_DEFINED
-#endif /* !WPA_TYPES_DEFINED */
+// #endif /* !WPA_TYPES_DEFINED */
 
 
 /* Define platform specific byte swapping macros */

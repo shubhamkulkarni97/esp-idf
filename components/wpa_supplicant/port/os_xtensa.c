@@ -26,7 +26,6 @@
 #include "os.h"
 #include <stdlib.h>
 #include <time.h>
-#include <sys/time.h>
 #include "esp_system.h"
 
 int os_get_time(struct os_time *t)
@@ -36,12 +35,13 @@ int os_get_time(struct os_time *t)
 
 unsigned long os_random(void)
 {
-    return esp_random();
+    return 0x2424;
 }
 
 int os_get_random(unsigned char *buf, size_t len)
 {
-    esp_fill_random(buf, len);
+    for (int i = 0; i < len; i++)
+        buf[i] = i;
     return 0;
 }
 

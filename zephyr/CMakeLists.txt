@@ -12,6 +12,8 @@ if(CONFIG_SOC_ESP32)
     ../components/efuse/esp32/include
     ../components/efuse/include
     ../components/esp32
+    ../components/wpa_supplicant/include
+    ../components/wpa_supplicant/port/include
     )
 
   zephyr_link_libraries(

@@ -20,7 +20,7 @@
 #include "os.h"
 
 /* Define platform specific variable type macros */
-#if defined(ESP_PLATFORM)
+// #if defined(ESP_PLATFORM)
 #include <stdint.h>
 typedef uint64_t u64;
 typedef uint32_t u32;
@@ -30,13 +30,13 @@ typedef int64_t s64;
 typedef int32_t s32;
 typedef int16_t s16;
 typedef int8_t s8;
-#endif /*ESP_PLATFORM*/
+// #endif /*ESP_PLATFORM*/
 
 #if defined(__XTENSA__)
-#include <machine/endian.h>
-#define __BYTE_ORDER     BYTE_ORDER
-#define __LITTLE_ENDIAN  LITTLE_ENDIAN
-#define __BIG_ENDIAN     BIG_ENDIAN
+// #include <machine/endian.h>
+#define __BYTE_ORDER     1234
+#define __LITTLE_ENDIAN  1234
+#define __BIG_ENDIAN     4321
 #endif /*__XTENSA__*/
 
 #if defined(__linux__) || defined(__GLIBC__) || defined(__ets__)
