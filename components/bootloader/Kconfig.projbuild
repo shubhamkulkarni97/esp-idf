@@ -131,7 +131,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_WDT_ENABLE
         bool "Use RTC watchdog in start code"
-        default y
+        default n
         help
             Tracks the execution time of startup code.
             If the execution time is exceeded, the RTC_WDT will restart system.
